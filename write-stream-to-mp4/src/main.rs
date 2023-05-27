@@ -1,73 +1,105 @@
-use actix_web::{
-    http,
-    rt::net::TcpStream,
-    web::{self, Bytes},
-    App, HttpResponse, HttpServer, Responder,
-};
-use futures::{future::PollFn, io, stream::once, FutureExt};
-use std::{
-    fs::{self, File},
-    io::Write,
-    task::Poll,
-    thread,
-};
+use std::fs::File;
+use std::io::Write;
 
-struct VideoFrame {
-    timestamp: u64,
-}
+use futures::io;
+// use av_format::demuxer;
+use tokio::net::TcpStream;
 
-struct AudioFrame {
-    timestamp: u64,
-}
+// #[tokio::main]
+// async fn main() {
+// let raw_stream = TcpStream::connect("192.168.0.50:2222").await.expect("error connecting to tcp port");
 
-struct Video {
-    frames: Vec<VideoFrame>,
-}
+// let mut buf = vec![0, 1024];
 
-struct Audio {
-    frames: Vec<AudioFrame>,
-}
+// let stream_buffer = raw_stream.try_read_buf(&mut buf).expect("couldn't read stream");
 
-impl Video {
-    pub fn fps(&self) -> f64 {
-        return match (self.frames.len(), self.frames.first(), self.frames.last()) {
-            (n, Some(first), Some(last)) if n > 1 => {
-                let duration = last.timestamp - first.timestamp;
-                let duration_sec = duration as f64 / 1000.0;
-                n as f64 / duration_sec
-            }
-            _ => 0.0,
-        };
-    }
-}
+//     let demuxer_ctx = demuxer::Context::new();
+
+//     let stream_demuxer = demuxer::Demuxer::read_headers(&mut buf, buf, info)
+// }
+
+// use av_codec::decoder::{Context as DecoderContext, Decoder};
+// use av_data::packet::Packet;
+// use av_format::demuxer::{Context as DemuxerContext, Demuxer};
+use openh264::decoder::Decoder;
+use openh264::nal_units;
 
 #[tokio::main]
+
 async fn main() {
-    let stream = TcpStream::connect("192.168.0.50:2222").await.unwrap();
-    let mut msg = vec![0; 4096];
-    let mut vid_file = File::create("./assets/video.mp4").expect("error opening vid file");
+    let raw_stream = TcpStream::connect("192.168.0.50:2222")
+        .await
+        .expect("error connecting to tcp port");
+
+    let mut buf = vec![0; 1024];
+    let mut decoder = Decoder::new().expect("unable to make decoder");
+    let mut output_file =
+        File::create("./assets/test.yuv").expect("what is yuv? baby don't hurt me");
+    // let mut demuxer = DemuxerContext::new(demuxer, reader)
 
     loop {
-        // Wait for the socket to be readable
+        raw_stream.readable().await.expect("stream not readable");
 
-        stream.readable().await.unwrap();
-
-        // Try to read data, this may still fail with `WouldBlock`
-        // if the readiness event is a false positive.
-
-        match stream.try_read(&mut msg) {
+        match raw_stream.try_read_buf(&mut buf) {
+            Ok(0) => break,
             Ok(n) => {
-                msg.truncate(n);
-                let bytes = Bytes::from(msg.to_owned());
-                println!("{} bytes read", n);
-                vid_file.write_all(&bytes).expect("Error writing");
+                buf.truncate(n);
+                for packet in nal_units(&buf) {
+                    let dec_packet = decoder.decode(packet);
+                    // println!("packet: {:?}", Some(&dec_packet));
+
+                    if Some(&dec_packet).is_some() {
+                        let mut o_buf: Vec<u8> = Vec::new();
+                        match dec_packet {
+                            Ok(Some(d)) => {
+                                d.write_rgb8(&mut o_buf);
+                                let (x, y) = d.dimension_rgb();
+                                println!("{}, {}", x, y);
+                                output_file.write(&o_buf).expect("error writing output");
+                            }
+                            Ok(None) => {
+                                println!("none")
+                            }
+                            Err(e) => {
+                                println!("err: {e}");
+                            }
+                        }
+                        // pckt
+                    }
+                }
+                // println!("bytes read: {}", n);
+                // let mut demuxer = <dyn Demuxer>::read_event(&mut buf)?;
             }
             Err(ref e) if e.kind() == io::ErrorKind::WouldBlock => {
                 continue;
             }
-            Err(_e) => {
-                println!("error");
+            Err(e) => {
+                println!("err: {}", e);
             }
         }
     }
+    // let video_stream = demuxer.streams().best_video().unwrap();
+
+    // let mut decoder = <dyn Decoder>::find_decoder(video_stream.codec().id())?;
+    // let mut decoder_context = DecoderContext::new(&decoder);
+    // decoder_context.set_params(video_stream.codecpar())?;
+
+    // let mut frame_count = 0;
+    // let mut packet = Packet::empty();
+
+    // while demuxer.read(&mut packet)? >= 0 {
+    //     if packet.stream_index() == video_stream.index() {
+    //         let mut frame = decoder_context.decode(&packet)?;
+    //         if frame.is_some() {
+    //             frame_count += 1;
+    //             println!(
+    //                 "Decoded frame {}: {:?}",
+    //                 frame_count,
+    //                 frame.unwrap().format()
+    //             );
+    //         }
+    //     }
+    // }
+
+    // Ok(())
 }
