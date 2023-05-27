@@ -38,6 +38,4 @@ func main() {
 		go executeCmd(messages[i])
 	}
 
-	fmt.Println("ending")
-
 }
