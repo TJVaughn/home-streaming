@@ -1,0 +1,1 @@
+ffmpeg -i tcp://192.168.0.184:2222 -i tcp://192.168.0.50:2222 -shortest -y -preset ultrafast 2>&1  -s 1280x720 -codec h264 -c:v libx264 -filter_complex "nullsrc=size=640x480 [base];[0:v] setpts=PTS-STARTPTS, scale=320x240 [left];[1:v] setpts=PTS-STARTPTS, scale=320x240 [right]; [base][left] overlay [tmp1]; [tmp1][right] overlay=shortest:x=320" -fpsmax 25 new-stream.mp4
