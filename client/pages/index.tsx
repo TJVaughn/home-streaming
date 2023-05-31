@@ -7,7 +7,7 @@ import WHEPClient from "../utils/WHEPClient";
 export default function Home() {
     const [show, setShow] = useState(false);
     new WHEPClient("1");
-    // new WHEPClient("2");
+    new WHEPClient("2");
 
     useEffect(() => {
         setTimeout(() => {
