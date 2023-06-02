@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import WHEPClient from "../utils/WHEPClient";
 
-// const stream1Url = "http://192.168.0.140:8889/cam-1";
+const stream1Url = "http://192.168.0.140:8889/cam-3";
 // const stream2Url = "http://192.168.0.140:8889/cam-2";
 
 export default function Home() {
@@ -30,27 +30,21 @@ export default function Home() {
                 <video
                     width={"100%"}
                     autoPlay
-                    id="video-1"
+                    id="video-2"
                     muted
                 ></video>
                 <video
                     width={"100%"}
                     autoPlay
-                    id="video-2"
+                    id="video-1"
                     muted
                 ></video>
+                {/* <iframe
+                    width="100%"
+                    height="500px"
+                    src={stream1Url}
+                />*/}
             </div>
         </div>
     );
 }
-
-// <iframe
-//                     width="100%"
-//                     height="500px"
-//                     src={stream2Url}
-//                 />
-//                 <iframe
-//                     width="100%"
-//                     height="500px"
-//                     src={stream1Url}
-//                 />
