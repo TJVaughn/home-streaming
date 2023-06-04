@@ -1,16 +1,17 @@
 import { useEffect, useState } from "react";
 import WHEPClient from "../utils/WHEPClient";
 
-const stream1Url = "http://192.168.0.140:8889/cam-3";
+// const stream1Url = "http://192.168.0.140:8889/cam-3";
 // const stream2Url = "http://192.168.0.140:8889/cam-2";
 
 export default function Home() {
     const [show, setShow] = useState(false);
-    new WHEPClient("1");
-    new WHEPClient("2");
 
     useEffect(() => {
         setTimeout(() => {
+            new WHEPClient("1");
+            // new WHEPClient("2");
+            // new WHEPClient("3");
             setShow(true);
         }, 200);
     });
@@ -39,6 +40,13 @@ export default function Home() {
                     id="video-1"
                     muted
                 ></video>
+                <video
+                    width={"100%"}
+                    autoPlay
+                    id="video-3"
+                    muted
+                ></video>
+
                 {/* <iframe
                     width="100%"
                     height="500px"
