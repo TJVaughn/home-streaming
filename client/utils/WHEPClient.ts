@@ -107,6 +107,7 @@ export default class WHEPClient {
     }
 
     onIceServers(res: any) {
+        console.log("header link", res.headers.get("Link"));
         this.pc = new RTCPeerConnection({
             iceServers: linkToIceServers(res.headers.get("Link")),
         });
