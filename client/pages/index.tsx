@@ -30,11 +30,9 @@ export default function Home() {
     useEffect(() => {
         setTimeout(() => {
             new WHEPClient("1");
-            new WHEPClient("2");
-            new WHEPClient("3");
-            const url = `${streamBase}/cam-2/whep`;
+            // new WHEPClient("2");
+            // new WHEPClient("3");
 
-            createVideoElement(url);
             setShow(true);
         }, 200);
     });
@@ -54,22 +52,23 @@ export default function Home() {
                 <video
                     width={"100%"}
                     autoPlay
-                    id="video-2"
-                    muted
-                ></video>
-                <video
-                    width={"100%"}
-                    autoPlay
                     id="video-1"
                     muted
                 ></video>
-                <video
+
+                {/*<video
+                    width={"100%"}
+                    autoPlay
+                    id="video-2"
+                    muted
+                ></video>
+                                <video
                     width={"100%"}
                     autoPlay
                     id="video-3"
                     muted
                 ></video>
-
+*/}
                 {/* <iframe
                     width="100%"
                     height="500px"
