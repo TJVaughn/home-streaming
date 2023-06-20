@@ -36,18 +36,18 @@ func executeFfmpegCmd(message string) int {
 func main() {
 	hr, _, _ := time.Now().Clock()
 	fmt.Println(hr)
-	// executeFfmpegCmd(fmt.Sprintf("echo %v", hr))
 
 	// run the start, but then restart the ffmpegs every hour with a new time?
 	path, _ := os.Getwd()
-	// ffmpegCmd := "ffmpeg -fflags +genpts -i tcp://192.168.0.%v:2222 -f rtsp -c copy rtsp://localhost:8554/%v -f mp4 -c copy ../raw/hour-cam-%v-%v.mp4 -y"
-	// go executeFfmpegCmd(fmt.Sprintf(ffmpegCmd, "184", "cam-1", "1", hr))
-	// go executeFfmpegCmd(fmt.Sprintf(ffmpegCmd, "50", "cam-2", "2", hr))
-	// go executeFfmpegCmd(fmt.Sprintf(ffmpegCmd, "112", "cam-3", "3", hr))
-	ffmpegCmd := "ffmpeg -fflags +genpts -i tcp://192.168.0.%v:2222 -f rtsp -c copy rtsp://localhost:8554/%v "
-	go executeFfmpegCmd(fmt.Sprintf(ffmpegCmd, "184", "cam-1"))
-	go executeFfmpegCmd(fmt.Sprintf(ffmpegCmd, "50", "cam-2"))
-	go executeFfmpegCmd(fmt.Sprintf(ffmpegCmd, "112", "cam-3"))
+	// ffmpegCmd := "ffmpeg -fflags +genpts -i tcp://192.168.0.%v:2222 -f rtsp -crf 32 -c copy rtsp://localhost:8554/%v "
+	// go executeFfmpegCmd(fmt.Sprintf(ffmpegCmd, "184", "cam-1"))
+	// go executeFfmpegCmd(fmt.Sprintf(ffmpegCmd, "50", "cam-2"))
+	// go executeFfmpegCmd(fmt.Sprintf(ffmpegCmd, "249", "cam-3"))
 	// go executeCmd("cd ../client; yarn start")
+
+	// ffmpegCmd := "ffmpeg -fflags +genpts -i tcp://192.168.0.%v:2222 -i tcp://192.168.0.%v:2222 -f rtsp hstack -c copy rtsp://localhost:8554/%v"
+	ffmpegCmd := "ffmpeg -fflags +genpts -i tcp://192.168.0.50:2222 -i tcp://192.168.0.184:2222 -i tcp://192.168.0.249:2222 -filter_complex \"[0:v][1:v][2:v]hstack=inputs=3[v]\" -map \"[v]\" -f rtsp -c:v h264 -crf 32 -bf 0 rtsp://localhost:8554/cam-1"
+	go executeFfmpegCmd(ffmpegCmd)
+
 	executeCmd(fmt.Sprintf("%s/mediamtx", path))
 }
