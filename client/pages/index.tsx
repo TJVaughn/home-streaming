@@ -1,9 +1,6 @@
 import { useEffect, useState } from "react";
 import WHEPClient from "../utils/WHEPClient";
 import axios, { AxiosResponse } from "axios";
-const streamBase = "http://192.168.0.140:8889";
-// const stream1Url = "http://192.168.0.140:8889/cam-3";
-// const stream2Url = "http://192.168.0.140:8889/cam-2";
 
 const getOptions = async (url: string) => {
     const res = await axios({
@@ -32,7 +29,6 @@ export default function Home() {
             new WHEPClient("1");
             new WHEPClient("2");
             // new WHEPClient("3");
-
             setShow(true);
         }, 200);
     });
@@ -82,24 +78,6 @@ export default function Home() {
             <div className={`video-container`}>
                 {vidMap}
                 {screenRatioHW}
-                {/*<video
-                    width={"100%"}
-                    autoPlay
-                    id="video-2"
-                    muted
-                ></video>
-                                <video
-                    width={"100%"}
-                    autoPlay
-                    id="video-3"
-                    muted
-                ></video>
-*/}
-                {/* <iframe
-                    width="100%"
-                    height="500px"
-                    src={stream1Url}
-                />*/}
             </div>
         </div>
     );

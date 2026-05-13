@@ -88,7 +88,6 @@ export default class WHEPClient {
         this.queuedCandidates = [];
         this.stream = stream;
         this.fetchUrl = `http://${window.location.hostname}:8889/cam-${stream}/whep`;
-
         this.start();
     }
 
