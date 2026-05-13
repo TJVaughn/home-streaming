@@ -1,25 +1,6 @@
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import WHEPClient from "../utils/WHEPClient";
-import axios, { AxiosResponse } from "axios";
-
-const getOptions = async (url: string) => {
-    const res = await axios({
-        url,
-        method: "OPTIONS",
-    });
-    // console.log(res);
-    return res;
-};
-const createPeerConnection = async (options: any) => {
-    if (options && options.headers) {
-        console.log(options.headers.get("Link"));
-    }
-};
-const createVideoElement = async (url: string) => {
-    const options = await getOptions(url);
-
-    const peerConn = await createPeerConnection(options);
-};
 
 export default function Home() {
     const [show, setShow] = useState(false);
@@ -28,7 +9,6 @@ export default function Home() {
         setTimeout(() => {
             new WHEPClient("1");
             new WHEPClient("2");
-            // new WHEPClient("3");
             setShow(true);
         }, 200);
     });
@@ -37,47 +17,28 @@ export default function Home() {
         return null;
     }
 
-    const screenRatioHW = screen.height / screen.width;
-
-    // const vidHeight = screenRatioHW < 1.0 ? screen.height / 2.5 + 90 : screen.height / 2 - 250;
-    // const vidWidth = screenRatioHW < 1.0 ? screen.width - 150 : screen.width - 20;
-
-    // const vidArr = ["1", "2", "3"];
     const vidArr = ["1", "2"];
-    const vidMap = vidArr.map((vid) => {
-        if (screenRatioHW < 1) {
-            return (
-                <video
-                    key={vid}
-                    width={"100%"}
-                    autoPlay={screenRatioHW > 1 ? false : true}
-                    id={`video-${vid}`}
-                    muted
-                    controls={true}
-                ></video>
-            );
-        }
-        if (vid == "2") {
-            return (
-                <video
-                    key={vid}
-                    width={"100%"}
-                    autoPlay={false}
-                    id={`video-2`}
-                    muted
-                    controls={true}
-                ></video>
-            );
-        }
-
-        return null;
-    });
+    const vidMap = vidArr.map((vid) => (
+        <video
+            key={vid}
+            width={"100%"}
+            autoPlay
+            id={`video-${vid}`}
+            muted
+            controls
+        />
+    ));
 
     return (
-        <div>
+        <div className="min-h-screen bg-black">
+            <nav className="flex items-center gap-6 px-6 py-4 bg-gray-900 border-b border-gray-800">
+                <span className="text-white font-medium">● Live</span>
+                <Link href="/events" className="text-gray-400 hover:text-white transition-colors">
+                    Detection Events
+                </Link>
+            </nav>
             <div className={`video-container`}>
                 {vidMap}
-                {screenRatioHW}
             </div>
         </div>
     );
