@@ -9,6 +9,7 @@ type DetectionEvent = {
     max_confidence: number;
     clip_path: string | null;
     thumbnail_path: string | null;
+    protected: boolean;
 };
 
 const CLASS_COLORS: Record<string, string> = {
@@ -42,6 +43,18 @@ export default function Events() {
             })
             .catch(() => setLoading(false));
     }, []);
+
+    const handleProtect = async (event: DetectionEvent) => {
+        const newVal = !event.protected;
+        await fetch("/api/protect", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id: event.id, protected: newVal }),
+        });
+        const updated = { ...event, protected: newVal };
+        setEvents((prev) => prev.map((e) => (e.id === event.id ? updated : e)));
+        setSelected(updated);
+    };
 
     const cameras = ["all", ...Array.from(new Set(events.map((e) => e.camera)))];
     const filtered =
@@ -99,6 +112,11 @@ export default function Events() {
                                 <span className="absolute top-2 left-2 bg-black/70 text-xs px-2 py-0.5 rounded">
                                     {event.camera}
                                 </span>
+                                {event.protected && (
+                                    <span className="absolute top-2 right-2 bg-green-700/90 text-xs px-2 py-0.5 rounded">
+                                        ★ Saved
+                                    </span>
+                                )}
                                 {event.clip_path && (
                                     <span className="absolute bottom-2 right-2 bg-black/70 text-xs px-2 py-0.5 rounded">
                                         ▶ Play
@@ -168,12 +186,26 @@ export default function Events() {
                                     ))}
                                 </div>
                             </div>
-                            <button
-                                onClick={() => setSelected(null)}
-                                className="text-gray-400 hover:text-white text-2xl leading-none ml-4"
-                            >
-                                ✕
-                            </button>
+                            <div className="flex items-center gap-2 ml-4">
+                                {selected.clip_path && (
+                                    <button
+                                        onClick={() => handleProtect(selected)}
+                                        className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${
+                                            selected.protected
+                                                ? "bg-green-700 hover:bg-green-600 text-white"
+                                                : "bg-gray-700 hover:bg-gray-600 text-gray-200"
+                                        }`}
+                                    >
+                                        {selected.protected ? "★ Saved" : "☆ Save clip"}
+                                    </button>
+                                )}
+                                <button
+                                    onClick={() => setSelected(null)}
+                                    className="text-gray-400 hover:text-white text-2xl leading-none"
+                                >
+                                    ✕
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>

@@ -41,9 +41,14 @@ class DB:
                     started_at TEXT NOT NULL,
                     classes TEXT NOT NULL,
                     max_confidence REAL NOT NULL,
-                    clip_path TEXT
+                    clip_path TEXT,
+                    protected INTEGER DEFAULT 0
                 )
             """)
+            try:
+                conn.execute("ALTER TABLE detections ADD COLUMN protected INTEGER DEFAULT 0")
+            except sqlite3.OperationalError:
+                pass  # column already exists
 
     def log(self, camera: str, started_at: datetime, classes: list, confidence: float, clip_path: str | None):
         with sqlite3.connect(self._path) as conn:
@@ -52,6 +57,14 @@ class DB:
                 "VALUES (?, ?, ?, ?, ?)",
                 (camera, started_at.isoformat(), json.dumps(sorted(classes)), confidence, clip_path),
             )
+
+    def is_protected(self, clip_filename: str) -> bool:
+        with sqlite3.connect(self._path) as conn:
+            row = conn.execute(
+                "SELECT 1 FROM detections WHERE clip_path LIKE ? AND protected = 1",
+                (f"%{clip_filename}%",),
+            ).fetchone()
+        return row is not None
 
 
 class CameraProcessor:
@@ -207,7 +220,7 @@ class CameraProcessor:
             print(f"[{self.name}] notify failed: {e}")
 
 
-def prune(output_dir: Path):
+def prune(output_dir: Path, db: DB):
     frame_cutoff = datetime.now() - timedelta(days=FRAME_RETAIN_DAYS)
     clip_cutoff = datetime.now() - timedelta(days=CLIP_RETAIN_DAYS)
 
@@ -222,15 +235,18 @@ def prune(output_dir: Path):
     for clip in (output_dir / "clips").glob("**/*.mp4"):
         try:
             if datetime.strptime(clip.stem[:10], "%Y-%m-%d") < clip_cutoff:
-                clip.unlink()
-                print(f"pruned clip {clip}")
+                if db.is_protected(clip.name):
+                    print(f"skipped protected clip {clip}")
+                else:
+                    clip.unlink()
+                    print(f"pruned clip {clip}")
         except ValueError:
             pass
 
 
-def pruner_loop(output_dir: Path):
+def pruner_loop(output_dir: Path, db: DB):
     while True:
-        prune(output_dir)
+        prune(output_dir, db)
         time.sleep(24 * 60 * 60)
 
 
@@ -243,7 +259,7 @@ def main():
         for name, url in CAMERAS.items()
     ]
     threads.append(
-        threading.Thread(target=pruner_loop, args=(OUTPUT_DIR,), name="pruner", daemon=True)
+        threading.Thread(target=pruner_loop, args=(OUTPUT_DIR, db), name="pruner", daemon=True)
     )
     for t in threads:
         t.start()

@@ -41,7 +41,7 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
         const db = new Database(DB_PATH, { readonly: true });
         const rows = db
             .prepare(
-                `SELECT id, camera, started_at, classes, max_confidence, clip_path
+                `SELECT id, camera, started_at, classes, max_confidence, clip_path, protected
                  FROM detections ORDER BY started_at DESC LIMIT 100`
             )
             .all();
@@ -56,6 +56,7 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
                 max_confidence: row.max_confidence,
                 clip_path: parseClipPath(row.clip_path),
                 thumbnail_path: findNearestThumbnail(row.camera, row.started_at),
+                protected: row.protected === 1,
             }))
         );
     } catch (e) {
