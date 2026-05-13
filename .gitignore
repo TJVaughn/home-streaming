@@ -13,10 +13,12 @@ go-server/main
 go-server/mediamtx
 mediamtx
 
-# stream artifacts
+# stream artifacts and model weights
 *.h264
 *.mp4
 *.buf
+*.weights
+*.pt
 
 # secrets
 raspi/wpa_supplicant.conf
