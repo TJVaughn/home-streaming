@@ -6,3 +6,17 @@ raw/*
 private
 dist/*
 outputs/*
+.env
+
+# binaries
+go-server/main
+go-server/mediamtx
+mediamtx
+
+# stream artifacts
+*.h264
+*.mp4
+*.buf
+
+# secrets
+raspi/wpa_supplicant.conf

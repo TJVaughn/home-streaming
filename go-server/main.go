@@ -8,11 +8,9 @@ import (
 )
 
 func executeCmd(message string) (command *exec.Cmd, err error) {
-
 	cmd := exec.Command("sh", "-c", message)
-
 	cmd.Stdout = os.Stdout
-
+	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
 		fmt.Println("Error running command: ", err)
 		return nil, err
@@ -20,34 +18,38 @@ func executeCmd(message string) (command *exec.Cmd, err error) {
 	return cmd, nil
 }
 
-func executeFfmpegCmd(message string) int {
+func executeFfmpegCmd(message string) {
 	time.Sleep(1 * time.Second)
 	for {
-		execRes, err := executeCmd(message)
-		if err != nil {
-			return 1
-		}
-		time.Sleep(5 * time.Second)
-		execRes.Process.Signal(os.Interrupt)
+		executeCmd(message)
+		fmt.Println("ffmpeg exited, restarting in 15s...")
+		time.Sleep(15 * time.Second)
 	}
-
 }
 
 func main() {
-	hr, _, _ := time.Now().Clock()
-	fmt.Println(hr)
+	cam1IP := os.Getenv("CAM1_IP")
+	cam2IP := os.Getenv("CAM2_IP")
 
-	// run the start, but then restart the ffmpegs every hour with a new time?
+	if cam1IP == "" || cam2IP == "" {
+		fmt.Println("CAM1_IP and CAM2_IP environment variables must be set")
+		os.Exit(1)
+	}
+
 	path, _ := os.Getwd()
-	ffmpegCmd := "ffmpeg -fflags +genpts -i tcp://192.168.0.%v:2222 -f rtsp -crf 32 -c copy rtsp://localhost:8554/%v "
-	go executeFfmpegCmd(fmt.Sprintf(ffmpegCmd, "184", "cam-2"))
-	go executeFfmpegCmd(fmt.Sprintf(ffmpegCmd, "50", "cam-1"))
-	go executeFfmpegCmd(fmt.Sprintf(ffmpegCmd, "249", "cam-3"))
-	go executeCmd("cd ../client; npm run start")
+	ffmpegCmd := "ffmpeg -fflags +genpts -f h264 -i tcp://%v:2222 -f rtsp -c copy rtsp://localhost:8554/%v"
 
-	// ffmpegCmd := "ffmpeg -fflags +genpts -i tcp://192.168.0.%v:2222 -i tcp://192.168.0.%v:2222 -f rtsp hstack -c copy rtsp://localhost:8554/%v"
-	// ffmpegCmd := "ffmpeg -fflags +genpts -i tcp://192.168.0.50:2222 -i tcp://192.168.0.184:2222 -i tcp://192.168.0.249:2222 -filter_complex \"[0:v][1:v][2:v]hstack=inputs=3[v]\" -map \"[v]\" -f rtsp -c:v h264 -crf 32 -bf 0 rtsp://localhost:8554/cam-1"
-	// go executeFfmpegCmd(ffmpegCmd)
+	go executeFfmpegCmd(fmt.Sprintf(ffmpegCmd, cam1IP, "cam-1"))
+	go executeFfmpegCmd(fmt.Sprintf(ffmpegCmd, cam2IP, "cam-2"))
+
+	go executeCmd("cd ../client; npm run dev")
+	go func() {
+		for {
+			executeCmd("cd ../python-processor; python3 main.py")
+			fmt.Println("python processor exited, restarting in 2s...")
+			time.Sleep(2 * time.Second)
+		}
+	}()
 
 	executeCmd(fmt.Sprintf("%s/mediamtx", path))
 }
