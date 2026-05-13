@@ -31,7 +31,7 @@ export default function Home() {
         setTimeout(() => {
             new WHEPClient("1");
             new WHEPClient("2");
-            new WHEPClient("3");
+            // new WHEPClient("3");
 
             setShow(true);
         }, 200);
@@ -46,7 +46,8 @@ export default function Home() {
     // const vidHeight = screenRatioHW < 1.0 ? screen.height / 2.5 + 90 : screen.height / 2 - 250;
     // const vidWidth = screenRatioHW < 1.0 ? screen.width - 150 : screen.width - 20;
 
-    const vidArr = ["1", "2", "3"];
+    // const vidArr = ["1", "2", "3"];
+    const vidArr = ["1", "2"];
     const vidMap = vidArr.map((vid) => {
         if (screenRatioHW < 1) {
             return (

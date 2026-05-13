@@ -1,27 +1,26 @@
-const streamBase = "http://192.168.0.140:8889";
 const restartPause = 2000;
 
 const linkToIceServers = (links: any) =>
     links !== null
         ? links.split(", ").map((link: string) => {
-              const m = link.match(
-                  /^<(.+?)>; rel="ice-server"(; username="(.*?)"; credential="(.*?)"; credential-type="password")?/i,
-              );
-              const ret = {
-                  urls: m ? [m[1]] : [],
-                  username: "",
-                  credential: "",
-                  credentialType: "",
-              };
+            const m = link.match(
+                /^<(.+?)>; rel="ice-server"(; username="(.*?)"; credential="(.*?)"; credential-type="password")?/i,
+            );
+            const ret = {
+                urls: m ? [m[1]] : [],
+                username: "",
+                credential: "",
+                credentialType: "",
+            };
 
-              if (m && m[3] !== undefined) {
-                  ret.username = m[3];
-                  ret.credential = m[4];
-                  ret.credentialType = "password";
-              }
+            if (m && m[3] !== undefined) {
+                ret.username = m[3];
+                ret.credential = m[4];
+                ret.credentialType = "password";
+            }
 
-              return ret;
-          })
+            return ret;
+        })
         : [];
 
 const parseOffer = (offer: any) => {
@@ -88,7 +87,7 @@ export default class WHEPClient {
         this.eTag = "";
         this.queuedCandidates = [];
         this.stream = stream;
-        this.fetchUrl = `${streamBase}/cam-${stream}/whep`;
+        this.fetchUrl = `http://${window.location.hostname}:8889/cam-${stream}/whep`;
 
         this.start();
     }
