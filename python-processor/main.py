@@ -3,6 +3,7 @@ import json
 import os
 import shutil
 import sqlite3
+import subprocess
 import threading
 import time
 from datetime import datetime, timedelta
@@ -149,6 +150,7 @@ class CameraProcessor:
                 if writer:
                     writer.release()
                     writer = None
+                    self._reencode(clip_path)
 
                 self.db.log(self.name, det_started, det_classes, det_confidence, clip_path)
                 self._notify(det_classes, det_confidence)
@@ -163,6 +165,25 @@ class CameraProcessor:
         cap.release()
         if writer:
             writer.release()
+
+    def _reencode(self, clip_path: str | None):
+        if not clip_path:
+            return
+        tmp = clip_path + ".tmp"
+        try:
+            os.rename(clip_path, tmp)
+            result = subprocess.run(
+                ["ffmpeg", "-i", tmp, "-c:v", "libx264", "-crf", "23",
+                 "-preset", "fast", "-movflags", "+faststart", "-y", clip_path],
+                capture_output=True, text=True,
+            )
+            if result.returncode != 0:
+                raise RuntimeError(result.stderr[-500:])
+            os.unlink(tmp)
+        except Exception as e:
+            print(f"[{self.name}] re-encode failed: {e}")
+            if os.path.exists(tmp):
+                os.rename(tmp, clip_path)
 
     def _detect(self, frame) -> list:
         results = self.model(frame, verbose=False, device="cpu")[0]

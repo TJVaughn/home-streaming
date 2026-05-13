@@ -42,7 +42,7 @@ func main() {
 	go executeFfmpegCmd(fmt.Sprintf(ffmpegCmd, cam1IP, "cam-1"))
 	go executeFfmpegCmd(fmt.Sprintf(ffmpegCmd, cam2IP, "cam-2"))
 
-	go executeCmd("cd ../client; npm run dev")
+	go executeCmd("cd ../client; npm run start")
 	go func() {
 		for {
 			executeCmd("cd ../python-processor; python3 main.py")
