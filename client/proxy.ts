@@ -23,7 +23,7 @@ function logAccess(req: NextRequest, ip: string, outcome: string) {
     }).catch(() => {});
 }
 
-export function middleware(req: NextRequest) {
+export function proxy(req: NextRequest) {
     const { pathname } = req.nextUrl;
 
     // Always allow the login flow and internal log endpoint
@@ -38,7 +38,8 @@ export function middleware(req: NextRequest) {
 
     // Local network: no auth required
     const forwarded = req.headers.get("x-forwarded-for");
-    const ip = forwarded ? forwarded.split(",")[0].trim() : (req.ip ?? "");
+    const realIp = req.headers.get("x-real-ip");
+    const ip = forwarded ? forwarded.split(",")[0].trim() : (realIp ?? "127.0.0.1");
     if (isLocal(ip)) return NextResponse.next();
 
     // Remote: check session cookie
