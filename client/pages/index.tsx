@@ -36,6 +36,9 @@ export default function Home() {
                 <Link href="/events" className="text-gray-400 hover:text-white transition-colors">
                     Detection Events
                 </Link>
+                <Link href="/access-log" className="text-gray-400 hover:text-white transition-colors">
+                    Access Log
+                </Link>
             </nav>
             <div className={`video-container`}>
                 {vidMap}

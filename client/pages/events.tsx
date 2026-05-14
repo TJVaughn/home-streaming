@@ -67,6 +67,9 @@ export default function Events() {
                     ● Live
                 </Link>
                 <span className="font-medium">Detection Events</span>
+                <Link href="/access-log" className="text-gray-400 hover:text-white transition-colors">
+                    Access Log
+                </Link>
                 <div className="ml-auto flex gap-2">
                     {cameras.map((cam) => (
                         <button
