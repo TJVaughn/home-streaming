@@ -23,6 +23,7 @@ NTFY_URL = os.getenv("NTFY_URL", "https://ntfy.sh/your-home-cam-topic")
 DETECT_CLASSES = {"person", "car", "dog", "cat", "bicycle", "motorcycle", "truck", "bear", "bird"}
 FRAME_RETAIN_DAYS = 7
 CLIP_RETAIN_DAYS = 30
+CONTINUOUS_RETAIN_HOURS = 12
 DETECT_FPS = 1
 PRE_BUFFER_SECS = 5
 POST_DETECT_SECS = 5
@@ -223,6 +224,7 @@ class CameraProcessor:
 def prune(output_dir: Path, db: DB):
     frame_cutoff = datetime.now() - timedelta(days=FRAME_RETAIN_DAYS)
     clip_cutoff = datetime.now() - timedelta(days=CLIP_RETAIN_DAYS)
+    cont_cutoff = datetime.now() - timedelta(hours=CONTINUOUS_RETAIN_HOURS)
 
     for day_dir in (output_dir / "frames").glob("*/????-??-??"):
         try:
@@ -240,6 +242,14 @@ def prune(output_dir: Path, db: DB):
                 else:
                     clip.unlink()
                     print(f"pruned clip {clip}")
+        except ValueError:
+            pass
+
+    for seg in (output_dir / "continuous").glob("*/*.mp4"):
+        try:
+            if datetime.strptime(seg.stem, "%Y-%m-%d_%H-%M-%S") < cont_cutoff:
+                seg.unlink()
+                print(f"pruned continuous {seg}")
         except ValueError:
             pass
 

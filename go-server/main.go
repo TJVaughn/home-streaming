@@ -37,10 +37,19 @@ func main() {
 	}
 
 	path, _ := os.Getwd()
-	ffmpegCmd := "ffmpeg -fflags +genpts -f h264 -i tcp://%v:2222 -f rtsp -c copy rtsp://localhost:8554/%v"
 
+	for _, cam := range []string{"cam-1", "cam-2"} {
+		os.MkdirAll(fmt.Sprintf("../outputs/continuous/%s", cam), 0755)
+	}
+
+	ffmpegCmd := "ffmpeg -fflags +genpts -f h264 -i tcp://%v:2222 -f rtsp -c copy rtsp://localhost:8554/%v"
 	go executeFfmpegCmd(fmt.Sprintf(ffmpegCmd, cam1IP, "cam-1"))
 	go executeFfmpegCmd(fmt.Sprintf(ffmpegCmd, cam2IP, "cam-2"))
+
+	// continuous recording: 30-minute segments, stream copy (no re-encode)
+	recordCmd := "ffmpeg -rtsp_transport tcp -i rtsp://localhost:8554/%s -c copy -f segment -segment_time 1800 -strftime 1 -reset_timestamps 1 ../outputs/continuous/%s/%%Y-%%m-%%d_%%H-%%M-%%S.mp4"
+	go executeFfmpegCmd(fmt.Sprintf(recordCmd, "cam-1", "cam-1"))
+	go executeFfmpegCmd(fmt.Sprintf(recordCmd, "cam-2", "cam-2"))
 
 	go executeCmd("cd ../client; npm run start")
 	go func() {
