@@ -28,21 +28,87 @@ function formatTime(iso: string) {
     return new Date(iso).toLocaleString();
 }
 
+function Pagination({
+    page,
+    totalPages,
+    total,
+    onPrev,
+    onNext,
+}: {
+    page: number;
+    totalPages: number;
+    total: number;
+    onPrev: () => void;
+    onNext: () => void;
+}) {
+    return (
+        <div className="flex items-center gap-3 text-sm text-gray-400">
+            <button
+                onClick={onPrev}
+                disabled={page <= 1}
+                className="px-3 py-1 rounded bg-gray-800 hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            >
+                ← Prev
+            </button>
+            <span>
+                Page {page} of {totalPages}
+                <span className="ml-2 text-gray-500">({total} events)</span>
+            </span>
+            <button
+                onClick={onNext}
+                disabled={page >= totalPages}
+                className="px-3 py-1 rounded bg-gray-800 hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            >
+                Next →
+            </button>
+        </div>
+    );
+}
+
 export default function Events() {
     const [events, setEvents] = useState<DetectionEvent[]>([]);
+    const [cameras, setCameras] = useState<string[]>([]);
     const [loading, setLoading] = useState(true);
     const [selected, setSelected] = useState<DetectionEvent | null>(null);
-    const [cameraFilter, setCameraFilter] = useState("all");
+    const [camera, setCamera] = useState("all");
+    const [date, setDate] = useState("");
+    const [savedOnly, setSavedOnly] = useState(false);
+    const [page, setPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const [total, setTotal] = useState(0);
 
     useEffect(() => {
-        fetch("/api/events")
+        setLoading(true);
+        const params = new URLSearchParams();
+        params.set("page", String(page));
+        if (camera !== "all") params.set("camera", camera);
+        if (date) params.set("date", date);
+        if (savedOnly) params.set("saved", "true");
+
+        fetch(`/api/events?${params}`)
             .then((r) => r.json())
             .then((data) => {
-                setEvents(data);
+                setEvents(data.events ?? []);
+                setCameras(data.cameras ?? []);
+                setTotalPages(data.totalPages ?? 1);
+                setTotal(data.total ?? 0);
                 setLoading(false);
             })
             .catch(() => setLoading(false));
-    }, []);
+    }, [page, camera, date, savedOnly]);
+
+    const handleCameraChange = (c: string) => {
+        setCamera(c);
+        setPage(1);
+    };
+    const handleDateChange = (d: string) => {
+        setDate(d);
+        setPage(1);
+    };
+    const handleSavedToggle = () => {
+        setSavedOnly((s) => !s);
+        setPage(1);
+    };
 
     const handleProtect = async (event: DetectionEvent) => {
         const newVal = !event.protected;
@@ -56,9 +122,7 @@ export default function Events() {
         setSelected(updated);
     };
 
-    const cameras = ["all", ...Array.from(new Set(events.map((e) => e.camera)))];
-    const filtered =
-        cameraFilter === "all" ? events : events.filter((e) => e.camera === cameraFilter);
+    const allCameras = ["all", ...cameras];
 
     return (
         <div className="min-h-screen bg-gray-950 text-white">
@@ -70,13 +134,16 @@ export default function Events() {
                 <Link href="/access-log" className="text-gray-400 hover:text-white transition-colors">
                     Access Log
                 </Link>
-                <div className="ml-auto flex gap-2">
-                    {cameras.map((cam) => (
+            </nav>
+
+            <div className="flex flex-wrap items-center gap-3 px-6 py-3 bg-gray-900 border-b border-gray-800">
+                <div className="flex gap-2">
+                    {allCameras.map((cam) => (
                         <button
                             key={cam}
-                            onClick={() => setCameraFilter(cam)}
+                            onClick={() => handleCameraChange(cam)}
                             className={`px-3 py-1 rounded text-sm transition-colors ${
-                                cameraFilter === cam
+                                camera === cam
                                     ? "bg-blue-600"
                                     : "bg-gray-800 hover:bg-gray-700"
                             }`}
@@ -85,18 +152,56 @@ export default function Events() {
                         </button>
                     ))}
                 </div>
-            </nav>
+
+                <div className="flex items-center gap-2">
+                    <input
+                        type="date"
+                        value={date}
+                        onChange={(e) => handleDateChange(e.target.value)}
+                        className="bg-gray-800 text-white text-sm px-3 py-1 rounded border border-gray-700 focus:outline-none focus:border-gray-500"
+                    />
+                    {date && (
+                        <button
+                            onClick={() => handleDateChange("")}
+                            className="text-gray-400 hover:text-white text-sm"
+                        >
+                            ✕
+                        </button>
+                    )}
+                </div>
+
+                <button
+                    onClick={handleSavedToggle}
+                    className={`px-3 py-1 rounded text-sm transition-colors ${
+                        savedOnly ? "bg-green-700 hover:bg-green-600" : "bg-gray-800 hover:bg-gray-700"
+                    }`}
+                >
+                    ★ Saved only
+                </button>
+            </div>
 
             <div className="p-6">
+                {total > 0 && (
+                    <div className="mb-4">
+                        <Pagination
+                            page={page}
+                            totalPages={totalPages}
+                            total={total}
+                            onPrev={() => setPage((p) => p - 1)}
+                            onNext={() => setPage((p) => p + 1)}
+                        />
+                    </div>
+                )}
+
                 {loading && (
                     <p className="text-gray-500 text-center mt-20">Loading...</p>
                 )}
-                {!loading && filtered.length === 0 && (
-                    <p className="text-gray-500 text-center mt-20">No detection events yet.</p>
+                {!loading && events.length === 0 && (
+                    <p className="text-gray-500 text-center mt-20">No detection events found.</p>
                 )}
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                    {filtered.map((event) => (
+                    {events.map((event) => (
                         <div
                             key={event.id}
                             className="bg-gray-900 rounded-lg overflow-hidden border border-gray-800 hover:border-gray-600 transition-colors cursor-pointer"
@@ -147,6 +252,18 @@ export default function Events() {
                         </div>
                     ))}
                 </div>
+
+                {total > 0 && (
+                    <div className="mt-6">
+                        <Pagination
+                            page={page}
+                            totalPages={totalPages}
+                            total={total}
+                            onPrev={() => setPage((p) => p - 1)}
+                            onNext={() => setPage((p) => p + 1)}
+                        />
+                    </div>
+                )}
             </div>
 
             {selected && (
