@@ -21,6 +21,7 @@ CAMERAS = {
 OUTPUT_DIR = Path("../outputs")
 NTFY_URL = os.getenv("NTFY_URL", "https://ntfy.sh/your-home-cam-topic")
 DETECT_CLASSES = {"person", "car", "dog", "cat", "bicycle", "motorcycle", "truck", "bear", "bird"}
+SILENT_CLASSES = {"car", "truck"}
 FRAME_RETAIN_DAYS = 7
 CLIP_RETAIN_DAYS = 30
 CONTINUOUS_RETAIN_HOURS = 12
@@ -167,7 +168,8 @@ class CameraProcessor:
                     self._reencode(clip_path)
 
                 self.db.log(self.name, det_started, det_classes, det_confidence, clip_path)
-                self._notify(det_classes, det_confidence)
+                if not all(c in SILENT_CLASSES for c in det_classes):
+                    self._notify(det_classes, det_confidence)
                 print(f"[{self.name}] saved: {det_classes} conf={det_confidence:.2f} -> {clip_path}")
 
                 detecting = False
