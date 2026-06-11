@@ -1,0 +1,29 @@
+services:
+  go-server:
+    build: ./go-server
+    network_mode: host
+    env_file: .env
+    volumes:
+      - ./outputs:/app/outputs
+    restart: unless-stopped
+
+  python-processor:
+    build: ./python-processor
+    network_mode: host
+    env_file: .env
+    volumes:
+      - ./outputs:/app/outputs
+    depends_on:
+      - go-server
+    restart: unless-stopped
+
+  client:
+    build: ./client
+    ports:
+      - "3000:3000"
+    env_file: .env
+    volumes:
+      - ./outputs:/app/outputs
+    depends_on:
+      - python-processor
+    restart: unless-stopped

@@ -26,10 +26,8 @@ Raspberry Pi
 
 ## Requirements
 
-- Go 1.21+
-- Node.js 18+
-- Python 3.10+
-- ffmpeg
+- Docker + Docker Compose
+- A `mediamtx` binary in `go-server/` (downloaded from the [mediamtx releases page](https://github.com/bluenviron/mediamtx/releases) — it's gitignored, so it must be present on disk before building the `go-server` image)
 - ncat (on Raspberry Pi)
 
 ## Setup
@@ -50,27 +48,20 @@ APP_PASSWORD=choose-a-strong-password
 APP_SECRET=                 # generate with: openssl rand -hex 32
 ```
 
-Install Python dependencies:
-
-```bash
-cd python-processor
-pip install -r requirements.txt
-```
-
 ## Running
 
-Source your `.env` and start the Go server (which starts everything):
+Each part of the system — Go server (ffmpeg + mediamtx), Python processor, and Next.js client — runs in its own container, started together with Docker Compose:
 
 ```bash
-cd go-server
-source ../.env && go run main.go
+docker compose up --build
 ```
 
 This starts:
-- mediamtx (RTSP/WebRTC server)
-- ffmpeg instances pulling from each camera
-- Next.js client at `http://localhost:3000`
-- Python processor for detection and recording
+- **go-server**: mediamtx (RTSP/WebRTC server) and ffmpeg instances pulling from each camera, recording continuously — runs with host networking so the browser can reach mediamtx's WebRTC port directly and ffmpeg can reach the cameras on the LAN
+- **python-processor**: YOLOv8n detection, clip/frame recording, and pruning — also runs with host networking so it can reach mediamtx at `localhost:8554`
+- **client**: Next.js app at `http://localhost:3000`
+
+All three containers share the `outputs/` directory (mounted as a volume) for clips, frames, continuous recordings, and the SQLite database.
 
 ## Raspberry Pi setup
 

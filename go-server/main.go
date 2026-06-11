@@ -51,14 +51,5 @@ func main() {
 	go executeFfmpegCmd(fmt.Sprintf(recordCmd, "cam-1", "cam-1"))
 	go executeFfmpegCmd(fmt.Sprintf(recordCmd, "cam-2", "cam-2"))
 
-	go executeCmd("cd ../client; npm run start")
-	go func() {
-		for {
-			executeCmd("cd ../python-processor; python3 main.py")
-			fmt.Println("python processor exited, restarting in 2s...")
-			time.Sleep(2 * time.Second)
-		}
-	}()
-
 	executeCmd(fmt.Sprintf("%s/mediamtx", path))
 }
